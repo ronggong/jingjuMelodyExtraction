@@ -110,7 +110,7 @@ class PitchExtractMakam(compmusic.extractors.ExtractorModule):
     #[pitch, pitch_salience] = self.ContourSelection(contours_bins,contours_contourSaliences,contours_start_times,duration)
 
     # cent to Hz conversion
-    #pitch = [0. if p == 0 else 55.*(2.**((( self.settings.binResolution*(p)))/1200 ) ) for p in pitch]
+    #pitch = [0. if p == 0 else 55.*(2.**(((self.settings.binResolution*(p)))/1200)) for p in pitch]
 
     # generate time stamps
     #time_stamps = [s*self.settings.hopSize/float(self.settings.sampleRate) for s in xrange(0,len(pitch))]
@@ -143,13 +143,13 @@ class PitchExtractMakam(compmusic.extractors.ExtractorModule):
     #        'settings': json.dumps(settings)}
 
     return contours_bins, contours_contourSaliences, contours_start_times, duration
-  
-  def pitchtrackGetter(self,contours_bins, contours_contourSaliences, contours_start_times, duration)
+    
+  def pitchtrackDumper(self, contours_bins, contours_contourSaliences, contours_start_times, duration):
     # run the simplified contour selection
     [pitch, pitch_salience] = self.ContourSelection(contours_bins,contours_contourSaliences,contours_start_times,duration)
 
     # cent to Hz conversion
-    pitch = [0. if p == 0 else 55.*(2.**((( self.settings.binResolution*(p)))/1200 ) ) for p in pitch]
+    pitch = [0. if p == 0 else 55.*(2.**(((self.settings.binResolution*(p)))/1200)) for p in pitch]
 
     # generate time stamps
     time_stamps = [s*self.settings.hopSize/float(self.settings.sampleRate) for s in xrange(0,len(pitch))]
@@ -159,17 +159,23 @@ class PitchExtractMakam(compmusic.extractors.ExtractorModule):
     out = out.tolist()
     
     # settings
-    settings = self.settings
-    settings.update({'version':self.__version__, 
-            'slug':self.__slug__, 
-            'source': fname,
-            'essentiaVersion': essentia.__version__,
-            'pitchUnit': 'Hz',
-            'citation': citation})
+    #settings = self.settings
+    #settings.update({'version':self.__version__, 
+    #        'slug':self.__slug__, 
+    #        'source': fname,
+    #        'essentiaVersion': essentia.__version__,
+    #        'pitchUnit': 'Hz',
+    #        'citation': citation})
+
+    # matlab 
+    #matout = cStringIO.StringIO()
+    #matob = {'pitch': out}
+    #matob.update(settings)
+
+    #scipy.io.savemat(matout, matob)
     
     return out
     
-
   def ContourSelection(self,pitchContours,contourSaliences,startTimes,duration):
     sampleRate = self.settings.sampleRate
 
