@@ -14,8 +14,41 @@ filenamesnonvoicePath = dg.jsonFilenameGetter(nonvoicePath)
 
 allfilenames = filenamesvoicePath + filenamesnonvoicePath
 
+# it contains each feature as a list [lengthContours, meanPitchContour ... mfcc1, mfcc2 ...]
+featureList = []
+for ii in range(19):
+    featureList.append([])
+
 featureVec = []
 target = []
+featureMeanSd = []
+
+def featureListCreate(featureList, lengthContour, meanPitchContour, sdPitchContour, totalSalience, meanSalience, sdSalience, mfccs, voicing):
+    '''
+    reshape features into featureList variable
+    '''
+    for ii in range(len(lengthContour)):
+        featureList[0].append(lengthContour[ii])
+        featureList[1].append(meanPitchContour[ii])
+        featureList[2].append(sdPitchContour[ii])
+        featureList[3].append(totalSalience[ii])
+        featureList[4].append(meanSalience[ii])
+        featureList[5].append(sdSalience[ii])
+        for kk in range(len(mfccs[ii])):
+            featureList[6+kk].append(mfccs[ii][kk])
+        featureList[18].append(voicing)
+    return featureList
+
+def featureNormalization(featureList):
+    '''
+    the structure of normalized feature list is [(feature0, mean0, sd0), (feature1, mean1, sd1), ...]
+    '''
+    normalizedFeatureList = []
+    for ii in range(len(featureList)-1):
+        normalizedFeature, mean, sd = fc.scaleFeatures(featureList[ii])
+        normalizedFeatureList.append((normalizedFeature, mean, sd))
+    normalizedFeatureList.append(featureList[-1])
+    return normalizedFeatureList
 
 jj = 1
 for filename in filenamesvoicePath:
@@ -26,12 +59,7 @@ for filename in filenamesvoicePath:
 
     lengthContour, meanPitchContour, sdPitchContour, totalSalience, meanSalience, sdSalience, mfccs = fc.featureExtract(contours_bins, contours_contourSaliences)
 
-    for ii in range(len(lengthContour)):
-        f1 = [lengthContour[ii], meanPitchContour[ii], sdPitchContour[ii], totalSalience[ii], meanSalience[ii], sdSalience[ii]]
-        f2 = mfccs[ii].tolist()
-        feature = f1 + f2
-        featureVec.append(feature)
-        target.append(0)
+    featureList = featureListCreate(featureList, lengthContour, meanPitchContour, sdPitchContour, totalSalience, meanSalience, sdSalience, mfccs, 0)
     jj += 1
 
 for filename in filenamesnonvoicePath:
@@ -42,16 +70,26 @@ for filename in filenamesnonvoicePath:
 
     lengthContour, meanPitchContour, sdPitchContour, totalSalience, meanSalience, sdSalience, mfccs = fc.featureExtract(contours_bins, contours_contourSaliences)
 
-    for ii in range(len(lengthContour)):
-        f1 = [lengthContour[ii], meanPitchContour[ii], sdPitchContour[ii], totalSalience[ii], meanSalience[ii], sdSalience[ii]]
-        f2 = mfccs[ii].tolist()
-        feature = f1 + f2
-        featureVec.append(feature)
-        target.append(1)
+    featureList = featureListCreate(featureList, lengthContour, meanPitchContour, sdPitchContour, totalSalience, meanSalience, sdSalience, mfccs, 1)
     jj += 1
 
+normalizedFeatureList = featureNormalization(featureList)
+
+# reshape the feature vector and target
+for ii in range(len(normalizedFeatureList[-1])):
+    vec = []
+    for jj in range(len(normalizedFeatureList)-1):
+        vec.append(float(normalizedFeatureList[jj][0][ii]))
+
+    featureVec.append(vec)
+    target.append(normalizedFeatureList[-1][ii])
+
+# write the mean and sd for each feature
+for ii in range(len(normalizedFeatureList)-1):
+    featureMeanSd.append((normalizedFeatureList[ii][1], normalizedFeatureList[ii][2]))
+
 with open('featureJson.json', 'w') as outfile:
-        data = {'featureVec': featureVec, 'target': target}
+        data = {'featureVec': featureVec, 'target': target, 'meansd': featureMeanSd}
         json.dump(data, outfile)
 
 '''

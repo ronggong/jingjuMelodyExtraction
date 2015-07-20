@@ -90,4 +90,18 @@ def featureExtract(contours_bins, contours_contourSaliences):
         sdSalience.append(sdPitch(contour))
     
     return  lengthContour, meanPitchContour, sdPitchContour, totalSalience, meanSalience, sdSalience, mfccs
+
+def stdDev(X):
+    mean = sum(X)/float(len(X))
+    tot = 0.0
+    for x in X:
+        tot += (x - mean)**2
+    return (tot/len(X))**0.5
+
+def scaleFeatures(vals):
+    vals = np.array(vals)
+    mean = sum(vals)/float(len(vals))
+    sd = stdDev(vals)
+    vals = vals - mean
+    return vals/sd, mean, sd
     

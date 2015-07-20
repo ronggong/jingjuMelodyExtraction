@@ -7,6 +7,7 @@ import featuresCalc as fc
 import contourReader as cr
 from sklearn.externals import joblib
 import numpy as np
+import json
 
 def pitchtrackGetter(fname, outputPitchtrack):
     # pitchContours object
@@ -26,10 +27,18 @@ def pitchtrackGetter(fname, outputPitchtrack):
     print 'extracting features ... ...'
     lengthContour, meanPitchContour, sdPitchContour, totalSalience, meanSalience, sdSalience, mfccs = fc.featureExtract(contours_bins, contours_contourSaliences)
 
+    # load mean sd for feature normalization
+    meansdpath = './model/meansdJson.json'
+    with open(meansdpath) as data_file:
+        data = json.load(data_file)
+        meansd = data['meansd']
+
+    # normalize the feature vector
     featureVec = []
     for ii in range(len(lengthContour)):
-        f1 = [lengthContour[ii], meanPitchContour[ii], sdPitchContour[ii], totalSalience[ii], meanSalience[ii], sdSalience[ii]]
-        f2 = mfccs[ii].tolist()
+        f1 = [(lengthContour[ii]/meansd[0][0])/meansd[0][1], (meanPitchContour[ii]/meansd[1][0])/meansd[1][1], (sdPitchContour[ii]/meansd[2][0])/meansd[2][1], (totalSalience[ii]/meansd[3][0])/meansd[3][1], (meanSalience[ii]/meansd[4][0])/meansd[4][1], (sdSalience[ii]/meansd[5][0])/meansd[5][1]]
+        for kk in range(len(mfccs[ii])):
+            f2.append((mfccs[ii][kk]-meansd[6+kk][0])/meansd[6+kk][1])
         feature = f1 + f2
         featureVec.append(feature)
 
